@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "AppSettingsToAzureAppServiceSettings": {
+      "commandName": "Project",
+      "commandLineArgs": "-i appsettings.Development.json "
+    }
+  }
+}
