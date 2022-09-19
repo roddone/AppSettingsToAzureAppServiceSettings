@@ -5,7 +5,7 @@ using System.Text.Json;
 if (args.Length == 0)
 {
     Console.WriteLine("A file path must be specified");
-    throw new ArgumentNullException(nameof(args));
+    return;
 }
 
 Parser.Default.ParseArguments<Arguments>(args).WithParsed(o =>
@@ -13,7 +13,13 @@ Parser.Default.ParseArguments<Arguments>(args).WithParsed(o =>
     if (!File.Exists(o.FilePath))
     {
         Console.WriteLine("Input file does not exists");
-        throw new FileNotFoundException();
+        return;
+    }
+
+    if (o.OutputType == OutputTypeKind.File && string.IsNullOrWhiteSpace(o.OutputFilePath))
+    {
+        Console.WriteLine("An output file path must be specified");
+        return;
     }
 
     //parse read input file
@@ -38,13 +44,16 @@ Parser.Default.ParseArguments<Arguments>(args).WithParsed(o =>
     }
     else if (o.OutputType == OutputTypeKind.File)
     {
+        //file exists and we don't want to overwrite it
         if (File.Exists(o.OutputFilePath) && !o.OverWriteExistingFile)
         {
             Console.WriteLine($"file \"{o.OutputFilePath}\" already exists");
             return;
         }
 
-        File.WriteAllText(o.OutputFilePath, jsonText);
+        //File exists (or does not exists, whatever), we delete and rewrite it
+        File.Delete(o.OutputFilePath ?? "");
+        File.WriteAllText(o.OutputFilePath ?? "", jsonText);
     }
 });
 
