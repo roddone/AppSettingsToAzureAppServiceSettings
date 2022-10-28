@@ -8,6 +8,8 @@ if (args.Length == 0)
     return;
 }
 
+var _serializerOptions = new JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
 Parser.Default.ParseArguments<Arguments>(args).WithParsed(o =>
 {
     if (!File.Exists(o.FilePath))
@@ -31,12 +33,15 @@ Parser.Default.ParseArguments<Arguments>(args).WithParsed(o =>
     //Process recursively
     Recurse(ref appSettings, string.Empty, obj.RootElement.EnumerateObject());
 
-    //transform into list with Azure AppService properties
-    var output = appSettings.Select(kvp => new { Name = kvp.Key, kvp.Value, SlotSetting = o.AreSlotSettings });
 
     //next is just writing to the correct output
-
-    string jsonText = JsonSerializer.Serialize(output, new JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+    string jsonText = o.OutputFormat switch
+    {
+        //transform into list with Azure AppService properties
+        OutputFormatKind.Azure => JsonSerializer.Serialize(appSettings.Select(kvp => new { Name = kvp.Key, kvp.Value, SlotSetting = o.AreSlotSettings }), _serializerOptions),
+        OutputFormatKind.DockerCompose => string.Join("\n", appSettings.Select(a => $"- {a.Key}={a.Value}")),
+        _ => throw new NotImplementedException()
+    };
 
     if (o.OutputType == OutputTypeKind.Console)
     {
@@ -107,6 +112,9 @@ class Arguments
     [Option('k', Required = false, Default = OutputTypeKind.Console, HelpText = "Output type (Console or File)")]
     public OutputTypeKind OutputType { get; set; }
 
+    [Option('f', Required = false, HelpText = "Output format", Default = OutputFormatKind.Azure)]
+    public OutputFormatKind OutputFormat { get; set; }
+
     [Option("oef", Required = false, Default = false, HelpText = "Wether to overwrite or not output file if it does already exists")]
     public bool OverWriteExistingFile { get; set; }
 
@@ -117,5 +125,10 @@ class Arguments
 enum OutputTypeKind
 {
     File, Console
+}
+
+enum OutputFormatKind
+{
+    Azure, DockerCompose
 }
 

@@ -2,7 +2,7 @@
   "profiles": {
     "AppSettingsToAzureAppServiceSettings": {
       "commandName": "Project",
-      "commandLineArgs": "-i appsettings.Development.json "
+      "commandLineArgs": "-i appsettings.Development.json -f DockerCompose"
     }
   }
 }
